@@ -46,7 +46,7 @@ CREATE TABLE car_shop.cars (
 );
 
 CREATE TABLE car_shop.cars_colors (
-    auto_id INTEGER REFERENCES car_shop.cars(id) NOT NULL, /* Для согласования с первичным ключом. */
+    car_id INTEGER REFERENCES car_shop.cars(id) NOT NULL, /* Для согласования с первичным ключом. */
     color_id INTEGER REFERENCES car_shop.colors(id) NOT NULL, /* Для согласования с первичным ключом. */
     PRIMARY KEY(auto_id, color_id)
 );
@@ -60,4 +60,38 @@ CREATE TABLE car_shop.sales (
     client_id INTEGER REFERENCES car_shop.clients(id) NOT NULL /* Для согласования с первичным ключом.*/
 );
 
+/* Заполнение таблиц данными. */
 
+INSERT INTO car_shop.clients (client_name, phone)
+SELECT DISTINCT s.person_name, s.phone 
+FROM raw_data.sales s;
+
+INSERT INTO car_shop.colors (name)
+SELECT DISTINCT SPLIT_PART(s.auto, ', ', -1)
+FROM raw_data.sales s;
+
+INSERT INTO car_shop.countries (name)
+SELECT DISTINCT s.brand_origin
+FROM raw_data.sales s
+WHERE s.brand_origin IS NOT NULL;
+
+INSERT INTO car_shop.cars (brand_name, model_name, gasoline_consumption, country_id)
+SELECT DISTINCT 
+    SPLIT_PART(SPLIT_PART(s.auto, ',', 1), ' ', 1),
+    SUBSTR(SPLIT_PART(s.auto, ',', 1), STRPOS(SPLIT_PART(s.auto, ',', 1), ' ') + 1),
+    s.gasoline_consumption,
+    c.id
+FROM raw_data.sales s
+LEFT JOIN car_shop.countries c ON c.name = s.brand_origin;
+
+INSERT INTO car_shop.cars_colors (car_id, color_id)
+SELECT DISTINCT c.id, col.id 
+FROM raw_data.sales s
+LEFT JOIN car_shop.cars c ON s.auto LIKE (c.brand_name || ' ' || c.model_name || '%')
+LEFT JOIN car_shop.colors col ON s.auto LIKE ('%' || col.name);
+
+INSERT INTO car_shop.sales (price, date, discount, auto_id, client_id)
+SELECT DISTINCT s.price, s.date, s.discount, a.id, c.id
+FROM raw_data.sales s
+LEFT JOIN car_shop.cars a ON s.auto LIKE (a.brand_name || ' ' || a.model_name || '%')
+LEFT JOIN car_shop.clients c ON c.client_name = s.person_name AND c.phone = s.phone;
