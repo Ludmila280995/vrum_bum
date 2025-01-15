@@ -1,4 +1,4 @@
-/* Создайте схему raw_data и таблицу sales в этой схеме. */
+/* Создайте схему raw_data и таблицу sales в этой схеме. /*
 CREATE SCHEMA raw_data;
 
 CREATE TABLE raw_data.sales(
@@ -12,5 +12,5 @@ CREATE TABLE raw_data.sales(
     discount INTEGER,
     brand_origin varchar);
 
-/* Заполните таблицу sales данными, используя команду \copy в psql. */
+/* Заполните таблицу sales данными, используя команду \copy в psql. /*
 \copy raw_data.sales(id,auto,gasoline_consumption,price,date,person_name,phone,discount,brand_origin) FROM 'C:\cars.csv' CSV HEADER NULL 'null';
